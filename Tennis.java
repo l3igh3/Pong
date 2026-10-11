@@ -7,6 +7,9 @@ public class Tennis extends JPanel implements KeyListener, ActionListener {
     private final int WIDTH = 700;
     private final int HEIGHT = 500;
 
+    private int playerScore = 0;
+    private int aiScore = 0;
+
     // Game objects
     private int paddleY = 200;
     private final int paddleWidth = 15;
@@ -52,6 +55,12 @@ public class Tennis extends JPanel implements KeyListener, ActionListener {
 
         // Ball
         g.fillOval(ballX, ballY, ballSize, ballSize);
+        
+        //score
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 30));
+        g.drawString("Player: " + playerScore, 50, 50);
+        g.drawString("AI: " + aiScore, WIDTH - 150, 50);
     }
 
     @Override
@@ -89,14 +98,25 @@ public class Tennis extends JPanel implements KeyListener, ActionListener {
         
         aiMove();
 
-        // Ball reset if missed
         if (ballX < 0) {
-            ballX = WIDTH / 2;
-            ballY = HEIGHT / 2;
+            aiScore++;
+            resetBall();
+        } 
+        if (ballX > WIDTH) {
+            playerScore++;
+            resetBall();
         }
 
         repaint();
     }
+
+    private void resetBall() {
+        ballX = WIDTH / 2;
+        ballY = HEIGHT / 2;
+        ballVelX = -4; // Ball moves towards the player
+        ballVelY = 4;
+    }
+ 
 
     private void aiMove() {
         int ballCenter = ballY + ballSize / 2;
