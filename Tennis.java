@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -27,8 +26,6 @@ public class Tennis extends JPanel implements ActionListener {
     private final int paddleHeight = 80;
 
     private int aiPaddleY = 200;
-    private final int aiPaddleX = WIDTH - 40;
-
     private int ballX = 350;
     private int ballY = 250;
     private int ballSize = 20;
@@ -44,6 +41,14 @@ public class Tennis extends JPanel implements ActionListener {
     public Tennis() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(Color.BLACK);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                paddleY = Math.max(0, Math.min(paddleY, getHeight() - paddleHeight));
+                aiPaddleY = Math.max(0, Math.min(aiPaddleY, getHeight() - paddleHeight));
+            }
+        });
 
         timer = new Timer(16, this); // ~60 FPS
         timer.start();
@@ -122,36 +127,53 @@ public class Tennis extends JPanel implements ActionListener {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        int width = getWidth();
+        int height = getHeight(); // Allows for dynamic resizing, but we will use fixed WIDTH and HEIGHT for game logic
+
         if (gameState == GameState.MENU) {
             g.setColor(Color.WHITE);
+
             g.setFont(new Font("Arial", Font.BOLD, 36));
-            g.drawString("Tennis Game", WIDTH / 2 - 100, 100);
+            g.drawString("Tennis Game", width / 2 - 100, height /4);
 
             g.setFont(new Font("Arial", Font.PLAIN, 20));
             g.drawString(
                 "Use UP/DOWN arrows and ENTER to select",
-                WIDTH / 2 - 150,
+                width / 2 - 190,
                 150
             );
 
+            int menuY = height / 2;
+
             g.setFont(new Font("Arial", Font.BOLD, 28));
-            g.drawString("Select Difficulty", WIDTH / 2 - 110, 200);
+            g.drawString("Select Difficulty", width / 2 - 100, menuY);
 
-            drawMenuOption(g, "Easy", 0, 250);
-            drawMenuOption(g, "Medium", 1, 300);
-            drawMenuOption(g, "Hard", 2, 350);
+            drawMenuOption(g, "Easy", 0, menuY + 50);
+            drawMenuOption(g, "Medium", 1, menuY + 100);
+            drawMenuOption(g, "Hard", 2, menuY + 150);
 
-            drawMenuOption(g, "Exit", 3, 450);
+            drawMenuOption(g, "Exit", 3, menuY + 200);
 
             return;
         }
-
 
         // Paddle
         g.setColor(Color.WHITE);
         g.fillRect(20, paddleY, paddleWidth, paddleHeight);
 
+       /* 
+        //For DEBUGGING
+        g.setColor(Color.RED);
+        g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+        g.drawString(
+            "Screen: " + getWidth() + "x" + getHeight(),
+            10,
+            20
+        );
+        */
+
         //AI Paddle
+        int aiPaddleX= getWidth() - 40;
         g.fillRect(aiPaddleX, aiPaddleY, paddleWidth, paddleHeight);
 
         // Ball
@@ -161,12 +183,12 @@ public class Tennis extends JPanel implements ActionListener {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 30));
         g.drawString("Player: " + playerScore, 50, 50);
-        g.drawString("Computer: " + aiScore, WIDTH - 150, 50);
+        g.drawString("Computer: " + aiScore, width - 200, 50);
     }
 
     private void drawMenuOption(Graphics g, String label, int option, int y) {
         g.setColor(menuSelection == option ? Color.YELLOW : Color.WHITE);
-        g.drawString((menuSelection == option ? "> " : "  ") + label, WIDTH / 2 - 50, y);
+        g.drawString((menuSelection == option ? "> " : "  ") + label, getWidth() / 2 - 50, y);
     }
 
     @Override
@@ -179,7 +201,7 @@ public class Tennis extends JPanel implements ActionListener {
         if (upPressed && paddleY > 0) {
             paddleY -= 5;
         }
-        if (downPressed && paddleY < HEIGHT - paddleHeight) {
+        if (downPressed && paddleY < getHeight() - paddleHeight) {
             paddleY += 5;
         }
 
@@ -188,9 +210,11 @@ public class Tennis extends JPanel implements ActionListener {
         ballY += ballVelY;
 
         // Ball bounce top/bottom
-        if (ballY <= 0 || ballY >= HEIGHT - ballSize) {
+        if (ballY <= 0 || ballY >= getHeight() - ballSize) {
             ballVelY *= -1;
         }
+
+        int aiPaddleX = getWidth() - 40;
 
         // Ball bounce off paddle
         if (ballX <= 20 + paddleWidth &&
@@ -212,7 +236,7 @@ public class Tennis extends JPanel implements ActionListener {
             aiScore++;
             resetBall();
         } 
-        if (ballX > WIDTH) {
+        if (ballX > getWidth()) {
             playerScore++;
             resetBall();
         }
@@ -221,8 +245,8 @@ public class Tennis extends JPanel implements ActionListener {
     }
 
     private void resetBall() {
-        ballX = WIDTH / 2;
-        ballY = HEIGHT / 2;
+        ballX = getWidth() / 2;
+        ballY = getHeight() / 2;
 
         ThreadLocalRandom random = ThreadLocalRandom.current();
         ballVelX = random.nextInt(3, 6) * (random.nextBoolean() ? 1 : -1);
@@ -236,7 +260,7 @@ public class Tennis extends JPanel implements ActionListener {
 
         if (ballCenter < aiCenter && aiPaddleY > 0) {
             aiPaddleY -= currentAiSpeed;
-        } else if (ballCenter > aiCenter && aiPaddleY < HEIGHT - paddleHeight) {
+        } else if (ballCenter > aiCenter && aiPaddleY < getHeight() - paddleHeight) {
             aiPaddleY += currentAiSpeed;
         }
     }
@@ -248,162 +272,9 @@ public class Tennis extends JPanel implements ActionListener {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-    }
-}
-=======
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-
-public class Tennis extends JPanel implements KeyListener, ActionListener {
-
-    private final int WIDTH = 700;
-    private final int HEIGHT = 500;
-
-    private int playerScore = 0;
-    private int aiScore = 0;
-
-    // Game objects
-    private int paddleY = 200;
-    private final int paddleWidth = 15;
-    private final int paddleHeight = 80;
-
-    private int aiPaddleY = 200;
-    private final int aiPaddleX = WIDTH - 40;
-    private final int aiSpeed = 3;
-
-    private int ballX = 350;
-    private int ballY = 250;
-    private int ballSize = 20;
-
-    private int ballVelX = 4;
-    private int ballVelY = 4;
-
-    private boolean upPressed = false;
-    private boolean downPressed = false;
-
-    private Timer timer;
-
-    public Tennis() {
-        setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        setBackground(Color.BLACK);
-
-        timer = new Timer(16, this); // ~60 FPS
-        timer.start();
-
-        addKeyListener(this);
-        setFocusable(true);
-    }
-
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        // Paddle
-        g.setColor(Color.WHITE);
-        g.fillRect(20, paddleY, paddleWidth, paddleHeight);
-
-        //AI Paddle
-        g.fillRect(aiPaddleX, aiPaddleY, paddleWidth, paddleHeight);
-
-        // Ball
-        g.fillOval(ballX, ballY, ballSize, ballSize);
-        
-        //score
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 30));
-        g.drawString("Player: " + playerScore, 50, 50);
-        g.drawString("AI: " + aiScore, WIDTH - 150, 50);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        // Paddle movement
-        if (upPressed && paddleY > 0) {
-            paddleY -= 5;
-        }
-        if (downPressed && paddleY < HEIGHT - paddleHeight) {
-            paddleY += 5;
-        }
-
-        // Ball movement
-        ballX += ballVelX;
-        ballY += ballVelY;
-
-        // Ball bounce top/bottom
-        if (ballY <= 0 || ballY >= HEIGHT - ballSize) {
-            ballVelY *= -1;
-        }
-
-        // Ball bounce off paddle
-        if (ballX <= 20 + paddleWidth &&
-            ballY + ballSize >= paddleY &&
-            ballY <= paddleY + paddleHeight) {
-            ballVelX *= -1;
-        }
-
-        //AI Paddle movement
-         if (ballX + ballSize >= aiPaddleX &&
-            ballY + ballSize >= aiPaddleY &&
-            ballY <= aiPaddleY + paddleHeight) {
-            ballVelX *= -1;
-        }
-        
-        aiMove();
-
-        if (ballX < 0) {
-            aiScore++;
-            resetBall();
-        } 
-        if (ballX > WIDTH) {
-            playerScore++;
-            resetBall();
-        }
-
-        repaint();
-    }
-
-    private void resetBall() {
-        ballX = WIDTH / 2;
-        ballY = HEIGHT / 2;
-        ballVelX = -4; // Ball moves towards the player
-        ballVelY = 4;
-    }
- 
-
-    private void aiMove() {
-        int ballCenter = ballY + ballSize / 2;
-        int aiCenter = aiPaddleY + paddleHeight / 2;
-
-        if (ballCenter < aiCenter && aiPaddleY > 0) {
-            aiPaddleY -= aiSpeed;
-        } else if (ballCenter > aiCenter && aiPaddleY < HEIGHT - paddleHeight) {
-            aiPaddleY += aiSpeed;
-        }
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_UP) upPressed = true;
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) downPressed = true;
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_UP) upPressed = false;
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) downPressed = false;
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {}
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Pong");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new Tennis());
+        frame.setResizable(true);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
->>>>>>> 5e269182027f6e19e52793f4622dec4a711f7d13
